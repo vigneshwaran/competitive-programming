@@ -7,9 +7,9 @@ for i in {A..H}; do cp template.cpp $i.cpp; done
 
 ## Downloading test cases
 ``` bash
-python fetchproblem.py idx=A --contest=1332
+python fetchproblem.py --idx=A --contest=1332
 ```
-  * idx - problem index 
+  * --idx - problem index 
   * --contest - contest id
   
   
