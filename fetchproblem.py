@@ -1,60 +1,68 @@
-import requests
-from bs4 import BeautifulSoup
-import os
+"""
+    Fetches the testcase related to problem statement
+"""
 import argparse
+from pathlib import Path
+import requests
+from bs4 import BeautifulSoup # type: ignore
+
+def get_parser():
+    """
+        Command line arguments
+    """
+    parser = argparse.ArgumentParser("Program to fetch testcases from codeforces contest")
+    parser.add_argument('--idx', '-i', type=str, help="relative url of problem description.")
+    parser.add_argument('--contest', '-c', type=str, help="contest url(name)")
+    return parser
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('idx', type=str)
-parser.add_argument('--contest',type=str)
+def write_into_file(data: BeautifulSoup, direc: Path) -> None:
+    """
+        Stores the data to file
+    """
+    for idx, i in enumerate(data, start=1):
+        with open(direc / (str(idx).zfill(3) + '.txt'), 'w') as file:
+            case = i.find("pre").text.lstrip()
+            file.write(case)
 
 
-contest = '1332'
+def main():
+    """
+        Fetches testcases from web, Creates directory and stores locally
+    """
+    # pylint: disable-msg=too-many-locals
+    idx = 'A'
+    contest = '1332'
 
+    args = get_parser().parse_args()
 
-args = parser.parse_args()
-if args.contest:
-    contest = args.contest
-idx = args.idx
-problem = "https://codeforces.com/contest/" + contest +"/problem/" + idx
+    if args.contest:
+        contest = args.contest
+    if args.idx:
+        idx = args.idx
 
-response = requests.get(problem)
+    problem = "https://codeforces.com/contest/" + contest +"/problem/" + idx
+    response = requests.get(problem)
+    if response.status_code != 200:
+        print("Invalid URL")
+        return
 
-# if response.status_code == 200:
-#     with open('problem.txt', 'w') as f:
-#         f.write(response.text)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-soup = BeautifulSoup(response.text, 'html.parser')
-inp = soup.findAll("div", {"class": "input"})
-try:
-    os.mkdir('testcases')
-except FileExistsError:
-    # directory already exists
-    pass
+    BASE_DIR = Path(__file__).resolve().parent
+    TESTCASES_DIR = BASE_DIR / 'testcases'
+    TESTCASES_DIR.mkdir(parents=True, exist_ok=True)
+    INP_DIR = TESTCASES_DIR / idx / 'inp'
+    OUT_DIR = TESTCASES_DIR / idx / 'op'
 
-os.chdir('testcases')
-# [os.remove(i) for i in os.listdir()]
+    INP_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-try:
-    os.mkdir('inp')
-    os.mkdir('op')
-except FileExistsError:
-    pass
+    in_p = soup.findAll("div", {"class": "input"})
+    o_p = soup.findAll('div', {'class': 'output'})
 
-os.chdir('inp')
-[os.remove(i) for i in os.listdir()]
-for en, i in enumerate(inp):
-    with open(str(en) + '.txt', 'w') as f:
-        ip = i.find("pre").text.lstrip()
-        f.write(ip)
+    write_into_file(in_p, INP_DIR)
+    write_into_file(o_p, OUT_DIR)
 
-os.chdir('../op')
-[os.remove(i) for i in os.listdir()]
-op = soup.findAll('div', {'class': 'output'})
-
-for en, i in enumerate(op):
-    with open(str(en) + '.txt', 'w') as f:
-        p = i.find("pre").text.lstrip()
-        f.write(p)
-        # f.write('\n')
-
+if __name__ == "__main__":
+    main()
