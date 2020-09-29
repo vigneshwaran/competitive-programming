@@ -17,5 +17,5 @@ python fetchproblem.py --idx=A --contest=1332
 ``` bash
 bash compile.sh file.cpp 
 ```
-  * file.cpp - optional if you have already compiled.
+  * file.cpp - solution code.
   
